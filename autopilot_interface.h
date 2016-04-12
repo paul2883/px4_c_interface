@@ -263,7 +263,10 @@ public:
 
 	void enable_offboard_control();
 	void disable_offboard_control();
-
+    /**********customed*****/
+    int arm_disarm(bool flag);    //arm or disarm the quad
+    int take_off(bool flag);
+    /***********************/
 	void start();
 	void stop();
 

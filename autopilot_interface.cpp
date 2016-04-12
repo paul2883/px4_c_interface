@@ -547,6 +547,60 @@ toggle_offboard_control( bool flag )
 	return len;
 }
 
+// ------------------------------------------------------------------------------
+//   Arm the quad
+// ------------------------------------------------------------------------------
+int
+Autopilot_Interface::
+arm_disarm(bool flag)
+{
+    // Prepare command for off-board mode
+    mavlink_command_long_t com = { 0 };
+    com.target_system    = system_id;
+    com.target_component = autopilot_id;
+    com.command          = MAV_CMD_COMPONENT_ARM_DISARM;
+    com.confirmation     = true;
+    com.param1           = (float) flag; // flag >0.5 => start, <0.5 => stop
+
+    // Encode
+    mavlink_message_t message;
+    mavlink_msg_command_long_encode(system_id, companion_id, &message, &com);
+
+    // Send the message
+    int len = serial_port->write_message(message);
+
+    // Done!
+    return len;
+}
+
+// ------------------------------------------------------------------------------
+//   take_off
+// ------------------------------------------------------------------------------
+int
+Autopilot_Interface::
+take_off(bool flag)
+{
+    // Prepare command for off-board mode
+    mavlink_command_long_t com = { 0 };
+    com.target_system    = system_id;
+    com.target_component = autopilot_id;
+    com.command          = MAV_CMD_NAV_TAKEOFF;
+    com.confirmation     = true;
+    //com.param1           = (float) flag; // flag >0.5 => start, <0.5 => stop
+    //com.param5             =0;
+    //com.param6             =0;
+    com.param7             =10;
+
+    // Encode
+    mavlink_message_t message;
+    mavlink_msg_command_long_encode(system_id, companion_id, &message, &com);
+
+    // Send the message
+    int len = serial_port->write_message(message);
+
+    // Done!
+    return len;
+}
 
 // ------------------------------------------------------------------------------
 //   STARTUP
