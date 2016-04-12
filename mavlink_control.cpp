@@ -182,7 +182,10 @@ commands(Autopilot_Interface &api)
     printf("Quad armed!!!!");
     sleep(1);
     int take_off_flag=api.take_off(true);
-    printf("Taking off");
+    printf("%d",take_off_flag);
+    printf("Taking off \n");
+    arm_flag=api.arm_disarm(false);
+    printf("Disartm \n");
 
 //	// now the autopilot is accepting setpoint commands
 
@@ -235,7 +238,7 @@ commands(Autopilot_Interface &api)
 //	//   STOP OFFBOARD MODE
 //	// --------------------------------------------------------------------------
 
-//	api.disable_offboard_control();
+    api.disable_offboard_control();
 
 //	// now pixhawk isn't listening to setpoint commands
 
