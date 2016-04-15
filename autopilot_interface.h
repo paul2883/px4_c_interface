@@ -118,6 +118,7 @@
 // helper functions
 uint64_t get_time_usec();
 void set_position(float x, float y, float z, mavlink_set_position_target_local_ned_t &sp);
+void set_gps(int32_t latitude, int32_t longitude, int32_t MSL, mavlink_set_gps_global_origin_t &sp);
 void set_velocity(float vx, float vy, float vz, mavlink_set_position_target_local_ned_t &sp);
 void set_acceleration(float ax, float ay, float az, mavlink_set_position_target_local_ned_t &sp);
 void set_yaw(float yaw, mavlink_set_position_target_local_ned_t &sp);
@@ -198,6 +199,9 @@ struct Mavlink_Messages {
 	// Global Position Target
 	mavlink_position_target_global_int_t position_target_global_int;
 
+    //Gps Target
+    mavlink_set_gps_global_origin_t gps_target;
+
 	// HiRes IMU
 	mavlink_highres_imu_t highres_imu;
 
@@ -256,8 +260,9 @@ public:
 
 	Mavlink_Messages current_messages;
 	mavlink_set_position_target_local_ned_t initial_position;
-
+    mavlink_set_gps_global_origin_t initial_gps;
 	void update_setpoint(mavlink_set_position_target_local_ned_t setpoint);
+    void update_gps(mavlink_set_gps_global_origin_t setpoint);
 	void read_messages();
 	int  write_message(mavlink_message_t message);
 
@@ -286,7 +291,7 @@ private:
 	pthread_t write_tid;
 
 	mavlink_set_position_target_local_ned_t current_setpoint;
-
+    mavlink_set_gps_global_origin_t current_gps_setpoint;
 	void read_thread();
 	void write_thread(void);
 

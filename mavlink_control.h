@@ -81,7 +81,7 @@ int main(int argc, char **argv);
 int top(int argc, char **argv);
 
 void commands(Autopilot_Interface &autopilot_interface);
-void parse_commandline(int argc, char **argv, char *&uart_name, int &baudrate);
+void parse_commandline(int argc, char **argv, char *&uart_name, int &baudrate, int32_t &latitude, int32_t &longitude, int32_t altitude);
 
 // quit handler
 Autopilot_Interface *autopilot_interface_quit;

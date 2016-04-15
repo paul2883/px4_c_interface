@@ -74,9 +74,11 @@ top (int argc, char **argv)
     char *uart_name = (char*)"/dev/ttyACM0";
 //#endif
 	int baudrate = 57600;
-
+    int32_t latitude;
+    int32_t longitude;
+    int32_t altitude;
 	// do the parse, will throw an int if it fails
-	parse_commandline(argc, argv, uart_name, baudrate);
+    parse_commandline(argc, argv, uart_name, baudrate, latitude, longitude, altitude);
 
 
 	// --------------------------------------------------------------------------
@@ -129,7 +131,7 @@ top (int argc, char **argv)
 	 * Start the port and autopilot_interface
 	 * This is where the port is opened, and read and write threads are started.
 	 */
-	serial_port.start();
+    serial_port.start();
 	autopilot_interface.start();
 
 
@@ -178,16 +180,9 @@ commands(Autopilot_Interface &api)
 
 	api.enable_offboard_control();
 	usleep(100); // give some time to let it sink in
-    int arm_flag=api.arm_disarm(true);
-    printf("Quad armed!!!!");
-    sleep(1);
-    int take_off_flag=api.take_off(true);
-    printf("%d",take_off_flag);
-    printf("Taking off \n");
-    arm_flag=api.arm_disarm(false);
-    printf("Disartm \n");
 
-//	// now the autopilot is accepting setpoint commands
+
+    // now the autopilot is accepting setpoint commands
 
 
 //	// --------------------------------------------------------------------------
@@ -196,8 +191,15 @@ commands(Autopilot_Interface &api)
 //	printf("SEND OFFBOARD COMMANDS\n");
 
 //    // initialize command data strtuctures
-//    mavlink_set_position_target_local_ned_t sp;
-//    mavlink_set_position_target_local_ned_t ip = api.initial_position;
+   mavlink_set_position_target_local_ned_t sp;
+   mavlink_set_position_target_local_ned_t ip = api.initial_position;
+
+   mavlink_set_gps_global_origin_t i_gps=api.initial_gps;
+   mavlink_set_gps_global_origin_t s_gps;
+
+   printf("%f,%f,%f",ip.x,ip.y,ip.z);
+   printf("\n");
+   printf("%f,%f,%f",i_gps.latitude,i_gps.longitude,i_gps.altitude);
 
 //    // autopilot_interface.h provides some helper functions to build the command
 
@@ -207,31 +209,53 @@ commands(Autopilot_Interface &api)
 ////				  -1.0       , // [m/s]
 ////				   0.0       , // [m/s]
 ////				   sp        );
-
+/*
 //    // Example 2 - Set Position
-//     set_position( ip.x - 5.0 , // [m]
-//                   ip.y - 5.0 , // [m]
-//                   ip.z       , // [m]
-//                   sp         );
+    set_position( ip.x - 5.0 , // [m]
+                  ip.y - 5.0 , // [m]
+                  ip.z       , // [m]
+                  sp         );
 
 
 //    // Example 1.2 - Append Yaw Command
-//    set_yaw( ip.yaw , // [rad]
-//             sp     );
+    set_yaw( ip.yaw , // [ra
+         //   sp     );
 
-//    // SEND THE COMMAND
+   // SEND THE COMMAND
 //    api.update_setpoint(sp);
 //    // NOW pixhawk will try to move
 
 //    // Wait for 8 seconds, check position
-//    for (int i=0; i < 8; i++)
-//    {
-//        mavlink_local_position_ned_t pos = api.current_messages.local_position_ned;
-//        printf("%i CURRENT POSITION XYZ = [ % .4f , % .4f , % .4f ] \n", i, pos.x, pos.y, pos.z);
-//        sleep(1);
-//    }
 
-//    printf("\n");
+
+    /***Arm the quad***/
+   // int arm_flag=api.arm_disarm(true);
+  //  printf("Quad armed!!!!");
+   // sleep(1);
+
+   /****Set the destination***/
+
+    /***take off*****/
+   // int take_off_flag=api.take_off(true);
+   // printf("%d",take_off_flag);
+   // printf("Taking off \n");
+
+
+    //arm_flag=api.arm_disarm(false);
+    printf("Disarmed \n");
+
+
+    for (int i=0; i < 8; i++)
+    {
+        mavlink_local_position_ned_t pos = api.current_messages.local_position_ned;
+        mavlink_set_gps_global_origin_t gps=api.current_messages.gps_target;
+        printf("%i CURRENT POSITION XYZ = [ % .4f , % .4f , % .4f ] \n", i, pos.x, pos.y, pos.z);
+        printf("%i CURRENT GPS latitude,longsitude,altitude = [ % .4f , % .4f , % .4f ] \n", i, gps.latitude,gps.longitude,gps.altitude);
+
+        sleep(1);
+    }
+
+    printf("\n");
 
 
 //	// --------------------------------------------------------------------------
@@ -284,7 +308,7 @@ commands(Autopilot_Interface &api)
 // ------------------------------------------------------------------------------
 // throws EXIT_FAILURE if could not open the port
 void
-parse_commandline(int argc, char **argv, char *&uart_name, int &baudrate)
+parse_commandline(int argc, char **argv, char *&uart_name, int &baudrate, int32_t &latitude, int32_t &longitude, int32_t altitude)
 {
 
 	// string for command line usage
@@ -320,8 +344,32 @@ parse_commandline(int argc, char **argv, char *&uart_name, int &baudrate)
 				throw EXIT_FAILURE;
 			}
 		}
+        
+        // Latitude
+       if (strcmp(argv[i], "-la") == 0 || strcmp(argv[i], "--latitude") == 0) {
+            if (argc > i + 1) {
+                latitude = atoi(argv[i + 1]);
 
+            } else {
+                printf("%s\n",commandline_usage);
+                throw EXIT_FAILURE;
+            }
+        }
+
+       // Longitude
+      if (strcmp(argv[i], "-lo") == 0 || strcmp(argv[i], "--longitude") == 0) {
+           if (argc > i + 1) {
+               longitude = atoi(argv[i + 1]);
+
+           } else {
+               printf("%s\n",commandline_usage);
+               throw EXIT_FAILURE;
+           }
+       }
 	}
+
+
+
 	// end: for each input argument
 
 	// Done!

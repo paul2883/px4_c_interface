@@ -724,7 +724,8 @@ start()
 	initial_position.vz       = local_data.local_position_ned.vz;
 	initial_position.yaw      = local_data.attitude.yaw;
 	initial_position.yaw_rate = local_data.attitude.yawspeed;
-
+    
+    initial_gps               =local_data.
 	printf("INITIAL POSITION XYZ = [ %.4f , %.4f , %.4f ] \n", initial_position.x, initial_position.y, initial_position.z);
 	printf("INITIAL POSITION YAW = %.4f \n", initial_position.yaw);
 	printf("\n");
