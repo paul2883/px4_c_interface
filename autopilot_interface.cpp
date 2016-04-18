@@ -387,16 +387,16 @@ read_messages()
 
 		// Check for receipt of all items
 		received_all =
-				this_timestamps.heartbeat                  &&
+                this_timestamps.heartbeat                  &&
 //				this_timestamps.battery_status             &&
 //				this_timestamps.radio_status               &&
 //				this_timestamps.local_position_ned         &&
-//				this_timestamps.global_position_int        &&
+                //this_timestamps.global_position_int        &&
 //				this_timestamps.position_target_local_ned  &&
 //				this_timestamps.position_target_global_int &&
 //				this_timestamps.highres_imu                &&
 //				this_timestamps.attitude                   &&
-				this_timestamps.sys_status
+                this_timestamps.sys_status
 				;
 
 		// give the write thread time to use the port
@@ -409,6 +409,139 @@ read_messages()
 	return;
 }
 
+// ------------------------------------------------------------------------------
+//   Read GPS
+// ------------------------------------------------------------------------------
+void
+Autopilot_Interface::
+read_gps()
+{
+	bool success;               // receive success flag
+	bool received_all = false;  // receive only one message
+	Time_Stamps this_timestamps;
+
+	// Blocking wait for new data
+    while ( !received_all )
+	{
+		// ----------------------------------------------------------------------
+		//   READ MESSAGE
+		// ----------------------------------------------------------------------
+		mavlink_message_t message;
+		success = serial_port->read_message(message);
+
+		// ----------------------------------------------------------------------
+		//   HANDLE MESSAGE
+		// ----------------------------------------------------------------------
+		if( success )
+		{
+
+			// Store message sysid and compid.
+			// Note this doesn't handle multiple message sources.
+			current_messages.sysid  = message.sysid;
+			current_messages.compid = message.compid;
+
+			
+
+					//printf("MAVLINK_MSG_ID_GLOBAL_POSITION_INT\n");
+					mavlink_msg_global_position_int_decode(&message, &(current_messages.global_position_int));
+					current_messages.time_stamps.global_position_int = get_time_usec();
+					this_timestamps.global_position_int = current_messages.time_stamps.global_position_int;
+				
+				
+
+			} // end: switch msgid
+
+		
+
+		// Check for receipt of all items
+		received_all =
+            //	this_timestamps.heartbeat                  &&
+//				this_timestamps.battery_status             &&
+//				this_timestamps.radio_status               &&
+//				this_timestamps.local_position_ned         &&
+            this_timestamps.global_position_int
+//				this_timestamps.position_target_local_ned  &&
+//				this_timestamps.position_target_global_int &&
+//				this_timestamps.highres_imu                &&
+//				this_timestamps.attitude                   &&
+            //	this_timestamps.sys_status
+				;
+
+		// give the write thread time to use the port
+		if ( writing_status > false ) {
+			usleep(100); // look for components of batches at 10kHz
+		}
+
+	} // end: while not received all
+
+	return;
+}
+
+
+// ------------------------------------------------------------------------------
+//   Read attitude
+// ------------------------------------------------------------------------------
+void
+Autopilot_Interface::
+read_attitude()
+{
+    bool success;               // receive success flag
+    bool received_all = false;  // receive only one message
+    Time_Stamps this_timestamps;
+
+    // Blocking wait for new data
+    while ( !received_all )
+    {
+        // ----------------------------------------------------------------------
+        //   READ MESSAGE
+        // ----------------------------------------------------------------------
+        mavlink_message_t message;
+        success = serial_port->read_message(message);
+
+        // ----------------------------------------------------------------------
+        //   HANDLE MESSAGE
+        // ----------------------------------------------------------------------
+        if( success )
+        {
+
+            // Store message sysid and compid.
+            // Note this doesn't handle multiple message sources.
+            current_messages.sysid  = message.sysid;
+            current_messages.compid = message.compid;
+
+            mavlink_msg_attitude_decode(&message, &(current_messages.attitude)) ;
+            current_messages.time_stamps.attitude = get_time_usec();
+            this_timestamps.attitude = current_messages.time_stamps.attitude;
+
+
+
+            } // end: switch msgid
+
+
+
+        // Check for receipt of all items
+        received_all =            this_timestamps.attitude;
+
+            //	this_timestamps.heartbeat                  &&
+//				this_timestamps.battery_status             &&
+//				this_timestamps.radio_status               &&
+//				this_timestamps.local_position_ned         &&
+    //        this_timestamps.global_position_int
+//				this_timestamps.position_target_local_ned  &&
+//				this_timestamps.position_target_global_int &&
+              //  this_timestamps.highres_imu
+            //	this_timestamps.sys_status
+
+
+        // give the write thread time to use the port
+        if ( writing_status > false ) {
+            usleep(100); // look for components of batches at 10kHz
+        }
+
+    } // end: while not received all
+
+    return;
+}
 // ------------------------------------------------------------------------------
 //   Write Message
 // ------------------------------------------------------------------------------
@@ -471,6 +604,49 @@ write_setpoint()
 	return;
 }
 
+// ------------------------------------------------------------------------------
+//   Write GPS Message
+// ------------------------------------------------------------------------------
+void
+Autopilot_Interface::
+write_gps(mavlink_set_gps_global_origin_t sp)
+{
+    // --------------------------------------------------------------------------
+    //   PACK PAYLOAD
+    // --------------------------------------------------------------------------
+
+    // pull from position target
+    //mavlink_set_gps_global_origin_t sp = current_gps_setpoint;
+
+    // double check some system parameters
+
+    sp.target_system    = system_id;
+
+
+
+    // --------------------------------------------------------------------------
+    //   ENCODE
+    // --------------------------------------------------------------------------
+
+    mavlink_message_t message;
+    mavlink_msg_set_gps_global_origin_encode(system_id, companion_id, &message, &sp);
+
+
+    // --------------------------------------------------------------------------
+    //   WRITE
+    // --------------------------------------------------------------------------
+
+    // do the write
+    int len = write_message(message);
+
+    // check the write
+    if ( len <= 0 )
+        fprintf(stderr,"WARNING: could not send GPS Position \n");
+    //	else
+    //		printf("%lu POSITION_TARGET  = [ %l , %l , %l ] \n", write_count, gps_, position_target.y, position_target.z);
+
+    return;
+}
 
 // ------------------------------------------------------------------------------
 //   Start Off-Board Mode
@@ -725,11 +901,22 @@ start()
 	initial_position.yaw      = local_data.attitude.yaw;
 	initial_position.yaw_rate = local_data.attitude.yawspeed;
 
+    /******gps initial  test*****/
+    initial_gps.latitude               =local_data.position_target_global_int.lat_int;
+    initial_gps.longitude               =local_data.position_target_global_int.lon_int;
+    initial_gps.altitude               =local_data.position_target_global_int.alt;
+
+    /**********************************/
 	printf("INITIAL POSITION XYZ = [ %.4f , %.4f , %.4f ] \n", initial_position.x, initial_position.y, initial_position.z);
 	printf("INITIAL POSITION YAW = %.4f \n", initial_position.yaw);
 	printf("\n");
-
-	// we need this before starting the write thread
+    //printf("Initial global position=[%f,%f,%f]", initial_gps.latitude, initial_gps.longitude, initial_gps.altitude);
+//    for(int i=0;i<100;i++)
+//    {
+//     printf("%f,%f,%f\n", local_data.attitude.pitch,local_data.attitude.roll, local_data.attitude.yaw);
+//     sleep(1);
+//    }
+    // we need this before starting the write thread
 
 
 	// --------------------------------------------------------------------------

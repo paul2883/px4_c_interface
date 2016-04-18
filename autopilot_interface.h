@@ -261,9 +261,12 @@ public:
 	Mavlink_Messages current_messages;
 	mavlink_set_position_target_local_ned_t initial_position;
     mavlink_set_gps_global_origin_t initial_gps;
-	void update_setpoint(mavlink_set_position_target_local_ned_t setpoint);
+
+
+    void update_setpoint(mavlink_set_position_target_local_ned_t setpoint);
     void update_gps(mavlink_set_gps_global_origin_t setpoint);
-	void read_messages();
+
+    void read_messages();
 	int  write_message(mavlink_message_t message);
 
 	void enable_offboard_control();
@@ -279,7 +282,9 @@ public:
 	void start_write_thread(void);
 
 	void handle_quit( int sig );
-
+    void write_gps(mavlink_set_gps_global_origin_t sp);
+    void read_gps();
+    void read_attitude();
 
 private:
 
@@ -292,7 +297,8 @@ private:
 
 	mavlink_set_position_target_local_ned_t current_setpoint;
     mavlink_set_gps_global_origin_t current_gps_setpoint;
-	void read_thread();
+
+    void read_thread();
 	void write_thread(void);
 
 	int toggle_offboard_control( bool flag );

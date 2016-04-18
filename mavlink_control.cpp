@@ -193,10 +193,10 @@ commands(Autopilot_Interface &api)
 //    // initialize command data strtuctures
    mavlink_set_position_target_local_ned_t sp;
    mavlink_set_position_target_local_ned_t ip = api.initial_position;
-
+   
    mavlink_set_gps_global_origin_t i_gps=api.initial_gps;
    mavlink_set_gps_global_origin_t s_gps;
-
+   
    printf("%f,%f,%f",ip.x,ip.y,ip.z);
    printf("\n");
    printf("%f,%f,%f",i_gps.latitude,i_gps.longitude,i_gps.altitude);
@@ -205,20 +205,20 @@ commands(Autopilot_Interface &api)
 
 
 //    // Example 1 - Set Velocity
-////	set_velocity( -1.0       , // [m/s]
-////				  -1.0       , // [m/s]
-////				   0.0       , // [m/s]
-////				   sp        );
-/*
+//	set_velocity( -1.0       , // [m/s]
+//			  -1.0       , // [m/s]
+//				   0.0       , // [m/s]
+//			   sp        );
+
 //    // Example 2 - Set Position
-    set_position( ip.x - 5.0 , // [m]
-                  ip.y - 5.0 , // [m]
-                  ip.z       , // [m]
-                  sp         );
+//    set_position( ip.x - 5.0 , // [m]
+//                  ip.y - 5.0 , // [m]
+//                  ip.z       , // [m]
+//                  sp         );
 
 
 //    // Example 1.2 - Append Yaw Command
-    set_yaw( ip.yaw , // [ra
+  //  set_yaw( ip.yaw , // [ra
          //   sp     );
 
    // SEND THE COMMAND
@@ -242,16 +242,19 @@ commands(Autopilot_Interface &api)
 
 
     //arm_flag=api.arm_disarm(false);
-    printf("Disarmed \n");
-
+//    printf("Disarmed \n");
 
     for (int i=0; i < 8; i++)
     {
-        mavlink_local_position_ned_t pos = api.current_messages.local_position_ned;
-        mavlink_set_gps_global_origin_t gps=api.current_messages.gps_target;
-        printf("%i CURRENT POSITION XYZ = [ % .4f , % .4f , % .4f ] \n", i, pos.x, pos.y, pos.z);
-        printf("%i CURRENT GPS latitude,longsitude,altitude = [ % .4f , % .4f , % .4f ] \n", i, gps.latitude,gps.longitude,gps.altitude);
+        api.read_attitude();
+        //mavlink_local_position_ned_t pos = api.current_messages.local_position_ned;
+       // mavlink_global_position_int_t global=api.current_messages.global_position_int;
+        mavlink_attitude_t at =api.current_messages.attitude;
+        //mavlink_set_gps_global_origin_t gps=api.current_messages.gps_target;
 
+        //printf("%i CURRENT POSITION XYZ = [ % .4f , % .4f , % .4f ] \n", i, pos.x, pos.y, pos.z);
+      //printf("%i CURRENT GPS latitude,longsitude,altitude = [ % .4f , % .4f , % .4f ] \n", i, global.lat,global.lon,global.alt);
+      printf("%f,%f,%f", at.pitch, at.roll, at.yaw);
         sleep(1);
     }
 
